@@ -12,7 +12,7 @@ public:
 		cout << "Printing from thread " << tid << " Job Id " << jobID << endl;
 		if (jobID % 2)
 		{
-			cout << "Thread " << tid << " going to sleep " << endl;
+			cout << "Thread " << tid << " going to sleep on jobid " << jobID << endl;
 			sleep(5);
 			cout << "Thread " << tid << " wokeup! Ready to schedule " << endl;
 		}
