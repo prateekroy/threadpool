@@ -55,12 +55,16 @@ job* thread_pool::StealTask(worker_thread* p){
         
         if (!threads[i]->jobDequeue.empty())
         {
-            cout << "--------------Thread " << p->tid << " trying to steal Task from------" << i << endl;
+            // cout << "--------------Thread " << p->tid << " trying to steal Task from------" << i << endl;
             pthread_mutex_lock(&threads[i]->jobDequeue_lock);
-            job* j = threads[i]->jobDequeue.back();
-            threads[i]->jobDequeue.pop_back();
+            job* j = NULL;
+            if (!threads[i]->jobDequeue.empty())
+            {
+                j = threads[i]->jobDequeue.back();
+                threads[i]->jobDequeue.pop_back();
+            }
             pthread_mutex_unlock(&threads[i]->jobDequeue_lock);
-            cout << "--------------Thread " << p->tid << " steal Task from " << i << " success------ jobid " << j->jobID << endl;
+            // cout << "--------------Thread " << p->tid << " steal Task from " << i << " success------ jobid " << j->jobID << endl;
             return j;
         }
         // pthread_mutex_unlock(&threads[i]->jobDequeue_lock);
@@ -68,17 +72,31 @@ job* thread_pool::StealTask(worker_thread* p){
     return NULL;
 }
 
+thread_pool::thread_pool(const thread_pool &tp){
+
+    cout << "Copy constr";
+    for (int i = 0; i < tp.threads.size(); ++i)
+    {
+        threads.push_back(tp.threads[i]);
+    }
+    numOfThreads = tp.numOfThreads;
+}
 
 
-worker_thread::worker_thread(int _tid, thread_pool* _parentPool):tid(_tid), parentPool(_parentPool){
-    thread = new pthread_t;
+worker_thread::worker_thread(int _tid, thread_pool* _parentPool){
+    // :tid(_tid), parentPool(_parentPool)
+
+    tid = _tid;
+    parentPool = _parentPool;
+
+    // thread = new pthread_t[1];
     // jobDequeue_lock = PTHREAD_MUTEX_INITIALIZER;
     // jobDequeue_cond = PTHREAD_COND_INITIALIZER;
 }
 
 worker_thread::~worker_thread(){
-    delete thread;
-    thread = NULL;
+    // delete thread;
+    // thread = NULL;
 }
 
 void worker_thread::assignJob(job *_job_){
@@ -96,6 +114,8 @@ bool worker_thread::loadJob(job*& _job_, worker_thread* p)
         pthread_cond_wait(&jobDequeue_cond, &jobDequeue_lock);
     }
 
+    // while(jobDequeue.empty())
+    //     pthread_cond_wait(&jobDequeue_cond, &jobDequeue_lock);
 
     //first look for own job queue
     if (!jobDequeue.empty())
@@ -115,13 +135,14 @@ bool worker_thread::loadJob(job*& _job_, worker_thread* p)
 
 void worker_thread::start(){
 
-    pthread_create(thread, NULL, &worker_thread::threadExecute, (void *)this);
-    // cout << "Thread:" << tid << " is alive now!\n";
+    pthread_create(&thread, NULL, &worker_thread::threadExecute, (void *)this);
+    cout << "Thread:" << tid << " is alive now!\n";
 
 }
 
 void *worker_thread::threadExecute(void *param)
 {
+    cout << "thread created";
     worker_thread *p = (worker_thread *)param;
     job *oneJob = NULL;
     while(p->loadJob(oneJob, p))
@@ -131,6 +152,8 @@ void *worker_thread::threadExecute(void *param)
         delete oneJob;
         oneJob = NULL;
     }
+    cout << "thread killed";
+    return NULL;
 }
 
 job* worker_thread::StealTask(worker_thread* p){

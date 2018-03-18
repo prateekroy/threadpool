@@ -12,7 +12,7 @@ class job
 {
 public:
     job(int id) : jobID(id) {}
-    virtual ~job(){}
+    // virtual ~job(){}
     //will be overrided by specific JOB
     void virtual working(void* param) = 0;
     int jobID;
@@ -25,7 +25,7 @@ private:
 class thread_pool;
 
 class worker_thread{
-    pthread_t* thread;
+    pthread_t thread;
     bool loadJob(job*& _job_, worker_thread* p);
     static void *threadExecute(void *);
     job* StealTask(worker_thread* p);
@@ -48,6 +48,7 @@ class thread_pool
 public:
     thread_pool();
     thread_pool(int num);
+    thread_pool(const thread_pool &tp);
     virtual ~thread_pool() {};
     void assignJob(job *_job_);   //some huerestic to assign job to which thread round robin
     void start();
